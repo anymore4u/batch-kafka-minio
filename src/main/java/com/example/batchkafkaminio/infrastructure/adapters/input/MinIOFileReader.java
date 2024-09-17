@@ -1,22 +1,32 @@
-// infrastructure/adapters/input/MinIOFileReader.java
 package com.example.batchkafkaminio.infrastructure.adapters.input;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3Object;
 import com.example.batchkafkaminio.domain.model.Line;
 import org.springframework.batch.item.ItemReader;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.concurrent.CompletableFuture;
 
 public class MinIOFileReader implements ItemReader<Line> {
 
-    private BufferedReader reader;
+    private final BufferedReader reader;
 
-    public MinIOFileReader(AmazonS3 s3Client, String bucketName, String key) {
-        S3Object s3object = s3Client.getObject(bucketName, key);
-        InputStreamReader streamReader = new InputStreamReader(s3object.getObjectContent());
-        this.reader = new BufferedReader(streamReader);
+    public MinIOFileReader(S3AsyncClient s3Client, String bucketName, String key) throws Exception {
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        CompletableFuture<ResponseBytes<GetObjectResponse>> future = s3Client.getObject(getObjectRequest, software.amazon.awssdk.core.async.AsyncResponseTransformer.toBytes());
+
+        ResponseBytes<GetObjectResponse> objectBytes = future.get();
+        InputStream inputStream = objectBytes.asInputStream();
+        this.reader = new BufferedReader(new InputStreamReader(inputStream));
     }
 
     @Override
