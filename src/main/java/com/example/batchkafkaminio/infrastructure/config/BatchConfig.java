@@ -69,6 +69,7 @@ public class BatchConfig {
         KafkaItemWriter<String, Line> writer = new KafkaItemWriterBuilder<String, Line>()
                 .kafkaTemplate(kafkaTemplate)
                 .itemKeyMapper(line -> null) // Use null se não tiver chave
+                // Remover ou manter itemTopicResolver conforme necessidade
                 .build();
         return writer;
     }
@@ -94,4 +95,5 @@ public class BatchConfig {
                 .start(processStep())
                 .build();
     }
+
 }
